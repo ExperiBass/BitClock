@@ -4,6 +4,20 @@ const numeral = require('numeral')
 
 const explorer_url = "https://bitcoinexplorer.org/api"
 
+function getBlocksTillHalving(fromHeight) {
+    const HALVING_PERIOD = 210000 // 210k blok
+    // there has to be a better way to do this, right?
+    const nextHalving = (parseInt(fromHeight / HALVING_PERIOD) + 1) * HALVING_PERIOD
+    return numeral(nextHalving - fromHeight).format()
+}
+
+function send(data) {
+    return new Promise(res => {
+        bitclock.write(data)
+        bitclock.drain(res)
+    })
+}
+
 // Create a port
 const bitclock = new SerialPort({
     path: '/dev/ttyACM0',
@@ -16,16 +30,17 @@ bitclock.on('open', () => {
 bitclock.on('data', (data) => {
     const parsed = data.toString('hex')
     console.log('Data:', parsed)
-    if (parsed === '0b') { // duino sends 0b when first ready
+    if (parsed === '0b') { // duino sends 0b when ready
         // duino is ready
         fetchAndSendData()
+        // MAYBETODO: infinitely poll api (1req/5min)?
     }
 })
 bitclock.on('error', (e) => {
     console.error(e)
 })
 bitclock.on('close', () => {
-    console.log("Stream closed by client.")
+    console.log("Stream closed.")
     process.exit()
 })
 
@@ -43,20 +58,6 @@ async function fetchAndSendData() {
     } catch(e) {
         console.error(e)
     }
-}
-
-function getBlocksTillHalving(fromHeight) {
-    const HALVING_PERIOD = 210000 // 210k blok
-    // there has to be a better way to do this, right?
-    const nextHalving = (parseInt(fromHeight / HALVING_PERIOD) + 1) * HALVING_PERIOD
-    return numeral(nextHalving - fromHeight).format()
-}
-
-function send(data) {
-    return new Promise(res => {
-        bitclock.write(data)
-        bitclock.drain(res)
-    })
 }
 
 process.on('beforeExit', () => {
