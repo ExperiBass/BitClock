@@ -88,7 +88,6 @@ void setup() {
   }
 
   Serial.write(11); // tell the host we're ready
-  lcd.print("Waiting...");
   while (Serial.available() == 0) {
     // wait for the host to give us some data
   }
